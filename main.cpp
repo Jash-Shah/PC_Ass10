@@ -232,14 +232,18 @@ float edge_weight(vector<string> &vec1, vector<string> &vec2)
   return (1 - count / (vec1.size() + vec2.size() - count));
 }
 
-vector<int> get_agents_with_skills(vector<string> task_skills, map<string, vector<string>> &Agents)
+vector<int> get_agents_with_skills(vector<string> task_skills, map<string, vector<string>> Agents)
 {
   // Agents that have atleast one of the given skills
   vector<int> skillful_agents;
-
+  for (const auto &skill: task_skills)
+  {
+    cout << skill << endl;
+  }
   // Solving using the set cover problem
   while(!task_skills.empty())
   {
+    // cout << "Finding best agent\n";
     // The agent who covers the most skills in the task_skills
     map<string, vector<string>>::iterator best_agent;
     // The no. of skills covered by the best agent
@@ -247,12 +251,14 @@ vector<int> get_agents_with_skills(vector<string> task_skills, map<string, vecto
 
     for(auto it = Agents.begin(); it != Agents.end(); it++)
     {
+      // cout << "For Agent : " << it->first << endl;
       int count_skills = 0;
       for(const auto &skill: it->second)
       {
         if (count(task_skills.begin(), task_skills.end(), skill))
         {
           count_skills++;
+          // cout << "Count_skills : " << count_skills << endl;
         }
       }
       if (count_skills > max_count_skills)
@@ -262,14 +268,22 @@ vector<int> get_agents_with_skills(vector<string> task_skills, map<string, vecto
       }
     }
 
+    // cout << "Best Agent Found : " << best_agent->first << endl;
     for (const auto &skill: best_agent->second)
     {
-      if (count(task_skills.begin(), task_skills.end(), skill))
-        {
-          task_skills.erase()
-        }
+      auto it = find(task_skills.begin(), task_skills.end(), skill);
+      if(it!=task_skills.end())
+      {
+        // cout << "Removed skill : " << *it << endl;
+        task_skills.erase(it);
+      }
     }
+
+    skillful_agents.push_back(distance(Agents.begin(), best_agent));
+    Agents.erase(best_agent->first);
   }
+
+  return skillful_agents;
 }
 
 
@@ -284,12 +298,15 @@ int main()
   cout << "Enter no. of skills in task : ";
   cin >> task_len;
   vector<string> task_skills(task_len);
-  for(int i = 0; i < task_len; i++)
+  string input;
+  while(getline(cin, input))
   {
-    cin >> task_skills[i];
+    task_skills.push_back(input);
   }
+  cout << "Got Skills\n";
 
   parse_file(Agents);
+  cout << "Parsed File\n";
   // print_Agents(Agents);
 
   // Save all agent names in a map so that each agent can be
@@ -321,10 +338,26 @@ int main()
                             distance(Agents.begin(), it2),
                             weight);
     }
+    cout << i << endl;
     i++;
   }
+  cout << "Created Comms Graph\n";
+  // comms_graph.printGraph();
 
-  comms_graph.printGraph();
+  vector<int> skillful_agents = get_agents_with_skills(task_skills, Agents);
+
+  for(auto i = 0; i < skillful_agents.size(); i++)
+  {
+    auto agent = next(Agents.begin(), skillful_agents[i]);
+    cout << agent->first << " : ";
+
+    for(const auto &skill: agent->second)
+    {
+      cout << skill << ", ";
+    }
+    cout << endl;
+
+  }
   // cout << "Shortest cycle with maximum weight: " << comms_graph.shortestCycleMaxWeight() << endl;
 
   return 0;
